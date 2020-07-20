@@ -1,0 +1,25 @@
+{
+  "title": "Tadiran AC controlled by Broadlink IR",
+  "config": {
+    "flow_title": "Tadiran using Broadlink {name} ({ip})",
+    "step": {
+      "user": {
+        "description": "Set up your Tadiran and Broadlink to integrate with Home Assistant.",  
+        "title": "Set up your Tadiran/Broadlink info",
+        "data": {
+          "ip_address": "[%key:common::config_flow::data::ip%]",
+          "rm_type": "RM type",
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    }
+  }
+}

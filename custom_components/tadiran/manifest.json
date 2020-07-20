@@ -1,0 +1,16 @@
+{
+  "domain": "tadiran",
+  "name": "ac",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/tadiran",
+  "requirements": [
+    "broadlink==0.14.0"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@amirv"
+  ]
+}

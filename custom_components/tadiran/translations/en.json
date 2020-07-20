@@ -1,0 +1,24 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "This Tadiran device is already configured"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect, please try again",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "flow_title": "Tadiran using Broadlink {name} ({ip})",
+        "step": {
+            "user": {
+                "data": {
+                    "ip_address": "IP Adress",
+                    "rm_type": "RM type",
+                    "name": "Name"
+                }
+            }
+        }
+    },
+    "description": "Set up your Tadiran and Broadlink to integrate with Home Assistant.",  
+    "title": "Set up your Tadiran/Broadlink info"
+}
