@@ -35,13 +35,15 @@ from homeassistant.const import (
     CONF_IP_ADDRESS,
     CONF_NAME,
     TEMP_CELSIUS,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
 )
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import slugify
 from homeassistant.util.temperature import convert as convert_temperature
 
-from .const import CONF_RM_TYPE
+from .const import CONF_RM_TYPE, CONF_TEMP_ENTITY_ID, CONF_HUMIDITY_ENTITY_ID
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,6 +57,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_NAME, default="tadiran"): cv.string,
         vol.Optional(CONF_RM_TYPE, default=DEFAULT_RM_TYPE): cv.positive_int,
         vol.Required(CONF_IP_ADDRESS): cv.string,
+        vol.Optional(CONF_TEMP_ENTITY_ID): cv.entity_id,
+        vol.Optional(CONF_HUMIDITY_ENTITY_ID): cv.entity_id,
     }
 )
 
@@ -65,7 +69,14 @@ async def create_tadiran_entities(hass, config_entry, async_add_entities):
 
     config = config_entry.data
     entities = [
-        TadiranClimate(config[CONF_NAME], config[CONF_IP_ADDRESS], config[CONF_RM_TYPE])
+        TadiranClimate(
+            hass,
+            config[CONF_NAME],
+            config[CONF_IP_ADDRESS],
+            config[CONF_RM_TYPE],
+            config[CONF_TEMP_ENTITY_ID],
+            config[CONF_HUMIDITY_ENTITY_ID]
+            )
     ]
 
     async_add_entities(entities, True)
@@ -89,7 +100,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class TadiranClimate(ClimateEntity):
     """Implementation of a Tadiran climate device."""
 
-    def __init__(self, name, ip, rm_type):
+    def __init__(self, hass, name, ip, rm_type, temp_entity, humidity_entity):
         """Initialization of a Tadiran climate device."""
         self._name = name
         self._ip = ip
@@ -97,10 +108,40 @@ class TadiranClimate(ClimateEntity):
         self._state = False
         self._target_temp = 24
         self._hvac_mode = HVAC_MODE_OFF
+        self._last_hvac_mode = HVAC_MODE_COOL
         self._fan_mode = FAN_AUTO
         self._swing_mode = SWING_OFF
+        self._temp_entity = temp_entity
+        self._humidity_entity = humidity_entity
 
         self.remote = BroadlinkTadiran(ip, rm_type)
+
+        self.hass = hass
+
+    def get_entity_val(self, entity):
+        if not entity:
+            return None
+
+        sensor_state = self.hass.states.get(entity)
+
+        if sensor_state == None:
+            return None
+
+        if sensor_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+
+        return float(sensor_state.state)
+
+    @property
+    def current_humidity(self):
+        """Return the current humidity."""
+        return self.get_entity_val(self._humidity_entity)
+
+
+    @property
+    def current_temperature(self):
+        """Return the sensor temperature."""
+        return self.get_entity_val(self._temp_entity)
 
     @property
     def name(self):
@@ -185,6 +226,9 @@ class TadiranClimate(ClimateEntity):
         self.send_state()
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
+        if hvac_mode == HVAC_MODE_OFF:
+            self._last_hvac_mode = hvac_mode
+
         self._hvac_mode = hvac_mode
         self.send_state()
 
@@ -204,6 +248,7 @@ class TadiranClimate(ClimateEntity):
             "swing": 1 if self._swing_mode != SWING_OFF else 0,
             "on": 1 if self._hvac_mode != HVAC_MODE_OFF else 0,
             "mode": {
+                HVAC_MODE_OFF: 0,
                 HVAC_MODE_FAN_ONLY: 0,  # XXX 0 seems to be auto and not fan
                 HVAC_MODE_COOL: 1,
                 HVAC_MODE_DRY: 2,
@@ -226,6 +271,9 @@ class TadiranClimate(ClimateEntity):
         """Return unique ID based on Tadiran ID."""
         return self._id
 
+    async def async_turn_on(self):
+        """Turn the entity on."""
+        await self.async_set_hvac_mode(self._last_hvac_mode)
 
 PREFIX = "26004e0000012793"
 SUFFIX = "14000d0500000000000000000000"
@@ -288,12 +336,11 @@ class BroadlinkTadiran:
         for k in unpack:
             arg = k["name"]
             val = args_vars.get(arg, None)
-            if val:
+            if val != None:
                 data[arg] = val
 
-        if args_vars.get("off", False):
+        if args_vars.get("on") == 0:
             _LOGGER.info("Turning OFF the AC")
-            data["on"] = 0
 
         bytes = pack(data)
         self.dev.send_data(bytes)

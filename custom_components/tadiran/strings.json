@@ -9,7 +9,9 @@
         "data": {
           "ip_address": "[%key:common::config_flow::data::ip%]",
           "rm_type": "RM type",
-          "name": "Name"
+          "name": "Name",
+          "temp_entity_id": "Temperature entity id",
+          "humidity_entity_id": "Humidity entity id"
         }
       }
     },

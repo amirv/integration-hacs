@@ -7,8 +7,10 @@ from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 
 from .climate import BroadlinkTadiran, CannotConnect, InvalidAuth
-from .const import CONF_RM_TYPE
+from .const import CONF_RM_TYPE, CONF_TEMP_ENTITY_ID, CONF_HUMIDITY_ENTITY_ID
 from .const import DOMAIN  # pylint:disable=unused-import
+
+from homeassistant.helpers import config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,6 +19,8 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_IP_ADDRESS): str,
         vol.Required(CONF_RM_TYPE): vol.In({0x2737: "rm3"}),
         vol.Optional(CONF_NAME, default="tadiran"): str,
+        vol.Optional(CONF_TEMP_ENTITY_ID, default=None): str,
+        vol.Optional(CONF_HUMIDITY_ENTITY_ID, default=None): str,
     }
 )
 
