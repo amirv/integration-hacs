@@ -227,7 +227,7 @@ class TadiranClimate(ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         if hvac_mode == HVAC_MODE_OFF:
-            self._last_hvac_mode = hvac_mode
+            self._last_hvac_mode = self._hvac_mode
 
         self._hvac_mode = hvac_mode
         self.send_state()
@@ -270,6 +270,10 @@ class TadiranClimate(ClimateEntity):
     def unique_id(self):
         """Return unique ID based on Tadiran ID."""
         return self._id
+
+    async def async_turn_off(self):
+        """Turn the entity on."""
+        await self.async_set_hvac_mode(HVAC_MODE_OFF)
 
     async def async_turn_on(self):
         """Turn the entity on."""
